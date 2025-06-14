@@ -1,22 +1,23 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { ProductCard } from "../components/product-card"
-import { ProductFilters } from "../components/product-filters"
-import { Button } from "../components/ui/button"
-import { Badge } from "../components/ui/badge"
-import { Grid, List } from "lucide-react"
-import { products } from "../lib/products"
-import type { FilterState, Product } from "../types/product"
+import { useState, useEffect } from "react";
+import { ProductCard } from "../components/product-card";
+import { ProductFilters } from "../components/product-filters";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Grid, List } from "lucide-react";
+import type { FilterState, Product } from "../types/product";
+import axios from "axios";
 
 interface ProductsPageProps {
-  onNavigate: (path: string) => void
+  onNavigate: (path: string) => void;
 }
 
 export function ProductsPage({ onNavigate }: ProductsPageProps) {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [sortBy, setSortBy] = useState("featured")
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products)
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] = useState("featured");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     brands: [],
@@ -25,7 +26,19 @@ export function ProductsPage({ onNavigate }: ProductsPageProps) {
     condition: "any",
     ratings: [],
     manufacturer: [],
-  })
+  });
+
+  useEffect(() => {
+    axios
+      .get("/api/products")
+      .then((res) => {
+        setProducts(res.data);
+        setFilteredProducts(res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+      });
+  }, []);
 
   const activeFilters = [
     ...filters.categories,
@@ -33,7 +46,7 @@ export function ProductsPage({ onNavigate }: ProductsPageProps) {
     ...filters.features,
     ...(filters.condition !== "any" ? [filters.condition] : []),
     ...filters.ratings.map((r) => `${r} star`),
-  ]
+  ];
 
   const clearAllFilters = () => {
     setFilters({
@@ -44,8 +57,8 @@ export function ProductsPage({ onNavigate }: ProductsPageProps) {
       condition: "any",
       ratings: [],
       manufacturer: [],
-    })
-  }
+    });
+  };
 
   const removeFilter = (filterToRemove: string) => {
     setFilters((prev) => ({
@@ -55,45 +68,55 @@ export function ProductsPage({ onNavigate }: ProductsPageProps) {
       features: prev.features.filter((f) => f !== filterToRemove),
       condition: filterToRemove === prev.condition ? "any" : prev.condition,
       ratings: prev.ratings.filter((r) => `${r} star` !== filterToRemove),
-    }))
-  }
+    }));
+  };
 
   useEffect(() => {
-    let filtered = products
+    let filtered = products;
 
     // Apply category filter
     if (filters.categories.length > 0) {
       filtered = filtered.filter((product) =>
-        filters.categories.some((category) => product.category.toLowerCase().includes(category.toLowerCase())),
-      )
+        filters.categories.some((category) =>
+          product.category.toLowerCase().includes(category.toLowerCase())
+        )
+      );
     }
 
     // Apply brand filter
     if (filters.brands.length > 0) {
-      filtered = filtered.filter((product) => filters.brands.includes(product.brand))
+      filtered = filtered.filter((product) =>
+        filters.brands.includes(product.brand)
+      );
     }
 
     // Apply features filter
     if (filters.features.length > 0) {
       filtered = filtered.filter((product) =>
         filters.features.some((feature) =>
-          product.features.some((pf) => pf.toLowerCase().includes(feature.toLowerCase())),
-        ),
-      )
+          product.features.some((pf) =>
+            pf.toLowerCase().includes(feature.toLowerCase())
+          )
+        )
+      );
     }
 
     // Apply price range filter
     filtered = filtered.filter(
-      (product) => product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1],
-    )
+      (product) =>
+        product.price >= filters.priceRange[0] &&
+        product.price <= filters.priceRange[1]
+    );
 
     // Apply ratings filter
     if (filters.ratings.length > 0) {
-      filtered = filtered.filter((product) => filters.ratings.some((rating) => Math.floor(product.rating) >= rating))
+      filtered = filtered.filter((product) =>
+        filters.ratings.some((rating) => Math.floor(product.rating) >= rating)
+      );
     }
 
-    setFilteredProducts(filtered)
-  }, [filters])
+    setFilteredProducts(filtered);
+  }, [filters, products]);
 
   return (
     <div className="container mx-auto px-4 pb-8">
@@ -101,15 +124,24 @@ export function ProductsPage({ onNavigate }: ProductsPageProps) {
       <div className="py-4">
         <nav className="text-sm text-gray-600 overflow-x-auto">
           <div className="flex items-center gap-2 whitespace-nowrap">
-            <button onClick={() => onNavigate("/")} className="hover:text-blue-500">
+            <button
+              onClick={() => onNavigate("/")}
+              className="hover:text-blue-500"
+            >
               Home
             </button>
             <span>›</span>
-            <button onClick={() => onNavigate("/products")} className="hover:text-blue-500">
+            <button
+              onClick={() => onNavigate("/products")}
+              className="hover:text-blue-500"
+            >
               Clothings
             </button>
             <span>›</span>
-            <button onClick={() => onNavigate("/products")} className="hover:text-blue-500">
+            <button
+              onClick={() => onNavigate("/products")}
+              className="hover:text-blue-500"
+            >
               Men's wear
             </button>
             <span>›</span>
@@ -130,7 +162,8 @@ export function ProductsPage({ onNavigate }: ProductsPageProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <h1 className="text-lg font-semibold">
-                {filteredProducts.length.toLocaleString()} items in Mobile accessory
+                {filteredProducts.length.toLocaleString()} items in Mobile
+                accessory
               </h1>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="verified" className="rounded" />
@@ -186,7 +219,12 @@ export function ProductsPage({ onNavigate }: ProductsPageProps) {
                   {filter} ×
                 </Badge>
               ))}
-              <Button variant="link" size="sm" onClick={clearAllFilters} className="text-blue-500 p-0 h-auto text-xs">
+              <Button
+                variant="link"
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-blue-500 p-0 h-auto text-xs"
+              >
                 Clear all filter
               </Button>
             </div>
@@ -201,7 +239,12 @@ export function ProductsPage({ onNavigate }: ProductsPageProps) {
             }
           >
             {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} viewMode={viewMode} onNavigate={onNavigate} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                viewMode={viewMode}
+                onNavigate={onNavigate}
+              />
             ))}
           </div>
 
@@ -224,5 +267,5 @@ export function ProductsPage({ onNavigate }: ProductsPageProps) {
         </main>
       </div>
     </div>
-  )
+  );
 }
